@@ -2,11 +2,10 @@
 ## Assignment 3 ML Ops Spam Detection
 ### Team: Asura Shen and Ganghua Mei
 
-Customer Service is a core service for a lot of businesses around the world and it is getting 
-disrupted at the moment by Natural Language Processing-powered applications. In this first 
-assignment you will implement a serverless, microservice-driven web application. Specifically, 
-you will build a Dining Concierge chatbot that sends you restaurant suggestions given a set of 
-preferences that you provide the chatbot with through conversation.
+In this assignment you will implement a machine learning model to predict whether a
+message is spam or not. Furthermore, you will create a system that upon receipt of an
+email message, it will automatically flag it as spam or not, based on the prediction
+obtained from the machine learning model.
 
 
 
