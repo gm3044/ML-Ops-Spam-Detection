@@ -8,8 +8,5 @@ email message, it will automatically flag it as spam or not, based on the predic
 obtained from the machine learning model.
 
 
+![plot](https://github.com/gm3044/ML-Ops-Spam-Detection/blob/main/Architecture.png)
 
-![plot](https://github.com/gm3044/Dining-Concierge-Assistant/blob/main/high_level_archiecture_diagram.png)
-
-
-## S3 link: http://sahu-hw1.s3-website-us-east-1.amazonaws.com
