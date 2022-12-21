@@ -1,4 +1,4 @@
-# COMS6998 Cloud Computing and Big Data FALL2022
+# COMS6998 Cloud Computing and Big Data Fall2022
 ## Assignment 3 ML Ops Spam Detection
 ### Team: Asura Shen and Ganghua Mei
 
