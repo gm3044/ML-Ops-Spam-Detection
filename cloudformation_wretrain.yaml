@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: HW3
+Parameters:
+  SageMakerEndpoint:
+    Type: String
+    Default: "sms-spam-classifier-mxnet"
+
+
+Resources:
+  Lambda:
+    Type: AWS::Lambda::Function 
+    Properties:
+      Code:
+        S3Bucket: assignment3-ccbd-lambda
+        S3Key: assignment3-.zip
+      Description: Lambda function for training ML model
+      Tags:
+        - Value: SAM
+          Key: lambda:createdBy
+      MemorySize: 128
+      Environment:
+        Variables:
+          ENDPOINT_NAME: !Ref SageMakerEndpoint
+          REGION: us-east-1
+      Handler: Lambda.lambda_handler
+      Role: arn:aws:iam::808751852363:role/service-role/assignment3-store
+      Timeout: 59
+      Runtime: python3.9
+      FunctionName: ccbd-assignment3-Lambda
+
+  EmailBucket:
+    Type: AWS::S3::Bucket
+    DependsOn: Lambda
+    Properties:
+      BucketName: assignment3-store
+      AccessControl: PublicReadWrite
+      NotificationConfiguration: 
+        LambdaConfigurations:
+          - Event: "s3:ObjectCreated:*"
+            Function: !GetAtt Lambda.Arn
+      
+      PublicAccessBlockConfiguration: 
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+
+  S3InvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Lambda
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::assignment3-store
+
+  SESReceiptRuleSet:
+    Type: 'AWS::SES::ReceiptRuleSet'
+    Properties:
+      RuleSetName: ruleset
+
+  ReceiptRule:
+    Type: 'AWS::SES::ReceiptRule'
+    Properties:
+      RuleSetName: !Ref SESReceiptRuleSet
+      Rule:
+        Name: Rule1
+        Actions:
+          - S3Action:
+              BucketName: !Ref EmailBucket
+        Enabled: true
+  Retrain:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        S3Bucket: assignment3-ccbd-retain
+        S3Key: assignment3-retrain.zip
+      Description: Retraining
+      MemorySize: 128
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt RetrainIAMRoles.Arn
+      Timeout: 100
+      Runtime: python3.9
+      FunctionName: ccbd-assignment3-retrain
+
+  RetrainIAMRoles:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: ccbd-assignment3-retrain-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+  ScheduledRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Name: scheduledRule-retrain
+      Description: "ScheduledRule"
+      ScheduleExpression: "rate(24 hours)"
+      State: "ENABLED"
+      Targets:
+        - Arn:
+            Fn::GetAtt:
+              - "Retrain"
+              - "Arn"
+          Id: "TargetFunctionV1"
+  PermissionForEventsToInvokeLambda:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !Ref "Retrain"
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+          - "ScheduledRule"
+          - "Arn"
+          
